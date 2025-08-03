@@ -1,24 +1,33 @@
-import {Download, LoaderCircle, Mail} from "lucide-react";
+import { Download, Mail } from "lucide-react";
 import TransactionInfoCard from "./TransactionInfoCard.jsx";
 import moment from "moment";
-import {useState} from "react";
+import { useState } from "react";
+import LoadingSpinner from "./LoadingSpinner.jsx";
 
-const IncomeList = ({transactions, onDelete, onDownload, onEmail}) => {
-    const [loading, setLoading] = useState(false);
+const IncomeList = ({ transactions, onDelete, onDownload, onEmail }) => {
+    const [emailLoading, setEmailLoading] = useState(false);
+    const [downloadLoading, setDownloadLoading] = useState(false);
     const handleEmail = async () => {
-        setLoading(true);
+        setEmailLoading(true);
         try {
             await onEmail();
-        }finally {
-            setLoading(false);
+        } catch (error) {
+            console.error('Failed to send email:', error);
+            throw error;
+        } finally {
+            setEmailLoading(false);
         }
     }
+
     const handleDownload = async () => {
-        setLoading(true);
+        setDownloadLoading(true);
         try {
             await onDownload();
-        }finally {
-            setLoading(false);
+        } catch (error) {
+            console.error('Failed to download:', error);
+            throw error;
+        } finally {
+            setDownloadLoading(false);
         }
     }
     return (
@@ -26,29 +35,37 @@ const IncomeList = ({transactions, onDelete, onDownload, onEmail}) => {
             <div className="flex items-center justify-between">
                 <h5 className="text-lg">Income Sources</h5>
                 <div className="flex items-center justify-end gap-2">
-                    <button disabled={loading} className="card-btn" onClick={handleEmail}>
-                        {loading ? (
+                    <button 
+                        disabled={emailLoading || downloadLoading} 
+                        className="card-btn flex items-center gap-2" 
+                        onClick={handleEmail}
+                    >
+                        {emailLoading ? (
                             <>
-                                <LoaderCircle className="w-4 h-4 animate-spin"/>
-                                Emailing...
+                                <LoadingSpinner size="sm" />
+                                <span>Emailing...</span>
                             </>
-                        ): (
+                        ) : (
                             <>
                                 <Mail size={15} className="text-base" />
-                                Email
+                                <span>Email</span>
                             </>
                         )}
                     </button>
-                    <button disabled={loading} className="card-btn" onClick={handleDownload}>
-                        {loading ? (
+                    <button 
+                        disabled={emailLoading || downloadLoading} 
+                        className="card-btn flex items-center gap-2" 
+                        onClick={handleDownload}
+                    >
+                        {downloadLoading ? (
                             <>
-                                <LoaderCircle className="w-4 h-4 animate-spin"/>
-                                Downloading...
+                                <LoadingSpinner size="sm" />
+                                <span>Downloading...</span>
                             </>
-                        ): (
+                        ) : (
                             <>
                                 <Download size={15} className="text-base" />
-                                Download
+                                <span>Download</span>
                             </>
                         )}
 
@@ -56,9 +73,13 @@ const IncomeList = ({transactions, onDelete, onDownload, onEmail}) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2">
-                {/* display the incomes */}
-                {transactions?.map((income) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                {transactions?.length === 0 ? (
+                    <div className="col-span-2 text-center text-gray-500 py-8">
+                        No income transactions found
+                    </div>
+                ) : (
+                    transactions?.map((income) => (
                     <TransactionInfoCard
                         key={income.id}
                         title={income.name}

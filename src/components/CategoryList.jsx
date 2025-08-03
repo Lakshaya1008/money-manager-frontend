@@ -1,4 +1,4 @@
-import {Layers2, Pencil} from "lucide-react";
+import { Layers2, Pencil, AlertCircle } from "lucide-react";
 
 const CategoryList = ({categories, onEditCategory}) => {
     return (
@@ -9,9 +9,10 @@ const CategoryList = ({categories, onEditCategory}) => {
 
             {/* Category list */}
             {categories.length === 0 ? (
-                <p className="text-gray-500">
-                    No categories added yet. Add some to get started!
-                </p>
+                <div className="flex items-center gap-2 text-gray-500">
+                    <AlertCircle size={18} />
+                    <p>No categories added yet. Add some to get started!</p>
+                </div>
             ): (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     {categories.map((category) => (

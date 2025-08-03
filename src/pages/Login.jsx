@@ -102,13 +102,15 @@ const Login = () => {
                                 </p>
                             )}
 
-                            <button disabled={isLoading} className={`btn-primary w-full py-3 text-lg font-medium flex items-center justify-center gap-2 ${isLoading ? 'opacity-60 cursor-not-allowed': ''}`} type="submit">
+                            <button
+                                type="submit"
+                                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                disabled={isLoading}
+                            >
                                 {isLoading ? (
-                                    <>
-                                        <LoaderCircle className="animate-spin w-5 h-5" />
-                                        Logging in...
-                                    </>
-                                ):("LOGIN")}
+                                    <LoadingSpinner size="sm" className="mr-2" />
+                                ) : null}
+                                <span>{isLoading ? "Logging in..." : "Login"}</span>
                             </button>
 
                             <p className="text-sm text-slate-800 text-center mt-6">

@@ -1,9 +1,9 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import EmojiPickerPopup from "./EmojiPickerPopup.jsx";
 import Input from "./Input.jsx";
-import {LoaderCircle} from "lucide-react";
+import LoadingSpinner from "./LoadingSpinner.jsx";
 
-const AddIncomeForm = ({onAddIncome, categories}) => {
+const AddIncomeForm = ({ onAddIncome, categories, isSubmitting = false }) => {
     const [income, setIncome] = useState({
         name: '',
         amount: '',
@@ -11,7 +11,7 @@ const AddIncomeForm = ({onAddIncome, categories}) => {
         icon: '',
         categoryId: ''
     })
-    const [loading, setLoading] = useState(false);
+
 
     const categoryOptions = categories.map(category => ({
         value: category.id,
@@ -23,12 +23,7 @@ const AddIncomeForm = ({onAddIncome, categories}) => {
     }
 
     const handleAddIncome = async () => {
-        setLoading(true);
-        try {
-            await onAddIncome(income);
-        }finally {
-            setLoading(false);
-        }
+        await onAddIncome(income);
     }
 
     useEffect(() => {
@@ -79,17 +74,15 @@ const AddIncomeForm = ({onAddIncome, categories}) => {
             <div className="flex justify-end mt-6">
                 <button
                     onClick={handleAddIncome}
-                    disabled={loading}
-                    className="add-btn add-btn-fill">
-                    {loading ? (
+                    disabled={isSubmitting}
+                    className="add-btn add-btn-fill flex items-center justify-center gap-2">
+                    {isSubmitting ? (
                         <>
-                            <LoaderCircle className="w-4 h-4 animate-spin"/>
-                            Adding...
+                            <LoadingSpinner size="sm" />
+                            <span>Adding...</span>
                         </>
-                    ): (
-                        <>
-                            Add Income
-                        </>
+                    ) : (
+                        <span>Add Income</span>
                     )}
                 </button>
             </div>

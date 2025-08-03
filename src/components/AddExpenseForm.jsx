@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import EmojiPickerPopup from "./EmojiPickerPopup.jsx";
 import Input from "./Input.jsx";
+import LoadingSpinner from "./LoadingSpinner.jsx";
 
-// Add 'categories' prop
-const AddExpenseForm = ({ onAddExpense, categories }) => {
-    const [expense, setExpense] = useState({ // Renamed 'income' state to 'expense' for clarity
-        name,
-        categoryId: "", // Changed from 'category' to 'categoryId'
+const AddExpenseForm = ({ onAddExpense, categories, isSubmitting = false, isLoadingCategories = false }) => {
+    const [expense, setExpense] = useState({
+        name: "",
+        categoryId: "",
         amount: "",
         date: "",
-        icon: "", // Icon might be associated with the selected category, or kept separate for custom entries
+        icon: "",
     });
 
     // Effect to set a default category if categories are loaded and none is selected
@@ -71,10 +71,18 @@ const AddExpenseForm = ({ onAddExpense, categories }) => {
             <div className="flex justify-end mt-6">
                 <button
                     type="button"
-                    className="add-btn add-btn-fill"
-                    onClick={() => onAddExpense(expense)} // Changed income to expense
+                    className="add-btn add-btn-fill flex items-center gap-2"
+                    onClick={() => onAddExpense(expense)}
+                    disabled={isSubmitting || isLoadingCategories}
                 >
-                    Add Expense
+                    {isSubmitting ? (
+                        <>
+                            <LoadingSpinner size="sm" />
+                            <span>Adding Expense...</span>
+                        </>
+                    ) : (
+                        <span>Add Expense</span>
+                    )}
                 </button>
             </div>
         </div>

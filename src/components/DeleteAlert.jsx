@@ -1,5 +1,5 @@
-import {useState} from "react";
-import {LoaderCircle} from "lucide-react";
+import { useState } from "react";
+import LoadingSpinner from "./LoadingSpinner.jsx";
 
 const DeleteAlert = ({content, onDelete}) => {
     const [loading, setLoading] = useState(false);
@@ -19,15 +19,15 @@ const DeleteAlert = ({content, onDelete}) => {
                     onClick={handleDelete}
                     disabled={loading}
                     type="button"
-                    className="add-btn add-btn-fill">
+                    className="add-btn add-btn-fill flex items-center gap-2">
                     {loading ? (
                         <>
-                            <LoaderCircle className="h-4 w-4 animated-spin" />
-                            Deleting...
+                            <LoadingSpinner size="sm" />
+                            <span>Deleting...</span>
                         </>
                     ): (
                         <>
-                            Delete
+                            <span>Delete</span>
                         </>
                     )}
                 </button>

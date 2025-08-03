@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import {useUser} from "../hooks/useUser.jsx";
+import { useUser } from "../hooks/useUser.jsx";
 import axiosConfig from "../util/axiosConfig.jsx";
-import {API_ENDPOINTS} from "../util/apiEndpoints.js";
+import { API_ENDPOINTS } from "../util/apiEndpoints.js";
 import Dashboard from "../components/Dashboard.jsx";
 import ExpenseOverview from "../components/ExpenseOverview.jsx";
 import ExpenseList from "../components/ExpenseList.jsx";
 import Modal from "../components/Modal.jsx";
 import AddExpenseForm from "../components/AddExpenseForm.jsx";
 import DeleteAlert from "../components/DeleteAlert.jsx";
+import LoadingSpinner from "../components/LoadingSpinner.jsx";
+import { Plus } from "lucide-react";
 
 const Expense = () => {
     useUser();
@@ -17,6 +19,10 @@ const Expense = () => {
     const [expenseData, setExpenseData] = useState([]);
     const [categories, setCategories] = useState([]); // New state for expense categories
     const [loading, setLoading] = useState(false);
+    const [categoryLoading, setCategoryLoading] = useState(false);
+    const [addingExpense, setAddingExpense] = useState(false);
+    const [emailLoading, setEmailLoading] = useState(false);
+    const [downloadLoading, setDownloadLoading] = useState(false);
     const [openAddExpenseModal, setOpenAddExpenseModal] = useState(false);
     const [openDeleteAlert, setOpenDeleteAlert] = useState({
         show: false,
@@ -45,11 +51,12 @@ const Expense = () => {
         }
     };
 
-    // New: Fetch Expense Categories
+    // Fetch Expense Categories
     const fetchExpenseCategories = async () => {
+        setCategoryLoading(true);
         try {
             const response = await axiosConfig.get(
-                API_ENDPOINTS.CATEGORY_BY_TYPE("expense") // Fetch categories of type 'expense'
+                API_ENDPOINTS.CATEGORY_BY_TYPE("expense")
             );
             if (response.data) {
                 setCategories(response.data);
@@ -57,54 +64,57 @@ const Expense = () => {
         } catch (error) {
             console.error("Failed to fetch expense categories:", error);
             toast.error("Failed to fetch expense categories.");
+            throw error;
+        } finally {
+            setCategoryLoading(false);
         }
     };
 
 
     // Handle Add Expense
     const handleAddExpense = async (expense) => {
-        const { name, categoryId, amount, date, icon } = expense; // Changed 'category' to 'categoryId'
-
-        if (!name.trim()) {
-            toast.error("Name is required.");
-            return;
-        }
-
-        // Validation Checks
-        if (!categoryId) { // Validate categoryId now
-            toast.error("Category is required.");
-            return;
-        }
-
-        if (!amount || isNaN(amount) || Number(amount) <= 0) {
-            toast.error("Amount should be a valid number greater than 0.");
-            return;
-        }
-
-        if (!date) {
-            toast.error("Date is required.");
-            return;
-        }
-
-        const today = new Date().toISOString().split('T')[0];
-        if (date > today) {
-            toast.error('Date cannot be in the future');
-            return;
-        }
+        const { name, categoryId, amount, date, icon } = expense;
 
         try {
+            // Validation Checks
+            if (!name?.trim()) {
+                throw new Error("Name is required.");
+            }
+
+            if (!categoryId) {
+                throw new Error("Category is required.");
+            }
+
+            if (!amount || isNaN(amount) || Number(amount) <= 0) {
+                throw new Error("Amount should be a valid number greater than 0.");
+            }
+
+            if (!date) {
+                throw new Error("Date is required.");
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            if (date > today) {
+                throw new Error('Date cannot be in the future');
+            }
+
+            setAddingExpense(true);
             await axiosConfig.post(API_ENDPOINTS.ADD_EXPENSE, {
                 name,
-                categoryId, // Pass categoryId to the API
-                amount: Number(amount), // Ensure amount is a number
+                categoryId,
+                amount: Number(amount),
                 date,
                 icon,
             });
 
+            toast.success("Expense added successfully!");
+            await fetchExpenseDetails();
             setOpenAddExpenseModal(false);
-            toast.success("Expense added successfully");
-            fetchExpenseDetails(); // Refresh expense list
-            fetchExpenseCategories();
+        } catch (error) {
+            console.error("Failed to add expense:", error);
+            toast.error(error.message || "Failed to add expense.");
+        } finally {
+            setAddingExpense(false);
         } catch (error) {
             console.error(
                 "Error adding expense:",
@@ -132,43 +142,56 @@ const Expense = () => {
     };
 
     const handleDownloadExpenseDetails = async () => {
+        if (!expenseData.length) {
+            toast.error("No expense data to download");
+            return;
+        }
+
         try {
+            setDownloadLoading(true);
             const response = await axiosConfig.get(
-                API_ENDPOINTS.EXPENSE_EXCEL_DOWNLOAD, // Ensure this path is correct, e.g., "/download/income"
+                API_ENDPOINTS.EXPENSE_EXCEL_DOWNLOAD,
                 {
-                    responseType: "blob", // Important: tells Axios to expect binary data
+                    responseType: "blob",
                 }
             );
 
-            // Extract filename from Content-Disposition header, or use a default
-            let filename = "expense_details.xlsx"; // Default filename
-
-            // Create a URL for the blob
+            const filename = "expense_details.xlsx";
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement("a");
             link.href = url;
-            link.setAttribute("download", filename); // Use the extracted or default filename
+            link.setAttribute("download", filename);
             document.body.appendChild(link);
-            link.click(); // Programmatically click the link to trigger download
-            link.parentNode.removeChild(link); // Clean up the link element
-            window.URL.revokeObjectURL(url); // Release the object URL
+            link.click();
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
 
             toast.success("Expense details downloaded successfully!");
         } catch (error) {
             console.error("Error downloading expense details:", error);
-            toast.error("Failed to download expense details. Please try again.");
+            toast.error(error.response?.data?.message || "Failed to download expense details");
+        } finally {
+            setDownloadLoading(false);
         }
     };
 
     const handleEmailExpenseDetails = async () => {
+        if (!expenseData.length) {
+            toast.error("No expense data to email");
+            return;
+        }
+
         try {
+            setEmailLoading(true);
             const response = await axiosConfig.get(API_ENDPOINTS.EMAIL_EXPENSE);
             if(response.status === 200) {
-                toast.success("Email sent");
+                toast.success("Email sent successfully");
             }
-        }catch (e) {
-            console.error("Error emailing expense details:", e);
-            toast.error("Failed to email expense details. Please try again.");
+        } catch (error) {
+            console.error("Error emailing expense details:", error);
+            toast.error(error.response?.data?.message || "Failed to email expense details");
+        } finally {
+            setEmailLoading(false);
         }
     }
 
@@ -181,12 +204,18 @@ const Expense = () => {
         <Dashboard activeMenu="Expense">
             <div className="my-5 mx-auto">
                 <div className="grid grid-cols-1 gap-6">
-                    <div className="">
-                        <ExpenseOverview
-                            transactions={expenseData}
-                            onExpenseIncome={() => setOpenAddExpenseModal(true)}
-                        />
-                    </div>
+                    {loading ? (
+                        <div className="flex justify-center items-center min-h-[200px]">
+                            <LoadingSpinner size="lg" />
+                        </div>
+                    ) : (
+                        <div className="">
+                            <ExpenseOverview
+                                transactions={expenseData}
+                                onExpenseIncome={() => setOpenAddExpenseModal(true)}
+                            />
+                        </div>
+                    )}
 
                     <ExpenseList
                         transactions={expenseData}
@@ -195,6 +224,8 @@ const Expense = () => {
                         }}
                         onDownload={handleDownloadExpenseDetails}
                         onEmail={handleEmailExpenseDetails}
+                        isEmailLoading={emailLoading}
+                        isDownloadLoading={downloadLoading}
                     />
 
                     <Modal
@@ -202,10 +233,11 @@ const Expense = () => {
                         onClose={() => setOpenAddExpenseModal(false)}
                         title="Add Expense"
                     >
-                        {/* Pass the fetched expense categories to the AddExpenseForm */}
                         <AddExpenseForm
                             onAddExpense={handleAddExpense}
-                            categories={categories} // Pass categories here
+                            categories={categories}
+                            isSubmitting={addingExpense}
+                            isLoadingCategories={categoryLoading}
                         />
                     </Modal>
 

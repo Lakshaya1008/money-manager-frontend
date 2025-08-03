@@ -1,15 +1,15 @@
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
 import Input from "./Input.jsx";
 import EmojiPickerPopup from "./EmojiPickerPopup.jsx";
-import {LoaderCircle} from "lucide-react";
+import LoadingSpinner from "./LoadingSpinner.jsx";
 
-const AddCategoryForm = ({onAddCategory, initialCategoryData, isEditing}) => {
+const AddCategoryForm = ({ onAddCategory, initialCategoryData, isEditing, isSubmitting }) => {
     const [category, setCategory] = useState({
         name: "",
         type: "income",
         icon: ""
     })
-    const [loading, setLoading] = useState(false);
+
 
     useEffect(() => {
         if (isEditing && initialCategoryData) {
@@ -29,12 +29,7 @@ const AddCategoryForm = ({onAddCategory, initialCategoryData, isEditing}) => {
     }
 
     const handleSubmit = async () => {
-        setLoading(true);
-        try {
-            await onAddCategory(category);
-        }finally {
-            setLoading(false);
-        }
+        await onAddCategory(category);
     }
     return (
         <div className="p-4">
@@ -64,16 +59,16 @@ const AddCategoryForm = ({onAddCategory, initialCategoryData, isEditing}) => {
                 <button
                     type="button"
                     onClick={handleSubmit}
-                    disabled={loading}
-                    className="add-btn add-btn-fill">
-                    {loading ? (
+                    disabled={isSubmitting}
+                    className="add-btn add-btn-fill flex items-center gap-2">
+                    {isSubmitting ? (
                         <>
-                            <LoaderCircle className="w-4 h-4 animate-spin"/>
-                            {isEditing ? "Updating..." : "Adding..."}
+                            <LoadingSpinner size="sm" />
+                            <span>{isEditing ? "Updating..." : "Adding..."}</span>
                         </>
                     ): (
                         <>
-                            {isEditing ? "Update Category" : "Add Category"}
+                            <span>{isEditing ? "Update Category" : "Add Category"}</span>
                         </>
                     )}
                 </button>

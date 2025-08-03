@@ -1,8 +1,9 @@
 import Dashboard from "../components/Dashboard.jsx";
 import {useUser} from "../hooks/useUser.jsx";
-import {Plus} from "lucide-react";
+import { Plus } from "lucide-react";
 import CategoryList from "../components/CategoryList.jsx";
-import {useEffect, useState} from "react";
+import { useEffect, useState } from "react";
+import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import axiosConfig from "../util/axiosConfig.jsx";
 import {API_ENDPOINTS} from "../util/apiEndpoints.js";
 import toast from "react-hot-toast";
@@ -12,6 +13,8 @@ import AddCategoryForm from "../components/AddCategoryForm.jsx";
 const Category = () => {
     useUser();
     const [loading, setLoading] = useState(false);
+    const [addingCategory, setAddingCategory] = useState(false);
+    const [updatingCategory, setUpdatingCategory] = useState(false);
     const [categoryData, setCategoryData] = useState([]);
     const [openAddCategoryModal, setOpenAddCategoryModal] = useState(false);
     const [openEditCategoryModal, setOpenEditCategoryModal] = useState(false);
@@ -59,15 +62,18 @@ const Category = () => {
         }
 
         try {
+            setAddingCategory(true);
             const response = await axiosConfig.post(API_ENDPOINTS.ADD_CATEGORY, {name, type, icon});
             if (response.status === 201) {
                 toast.success("Category added successfully");
                 setOpenAddCategoryModal(false);
                 fetchCategoryDetails();
             }
-        }catch (error) {
+        } catch (error) {
             console.error('Error adding category:', error);
             toast.error(error.response?.data?.message || "Failed to add category.");
+        } finally {
+            setAddingCategory(false);
         }
     }
 
@@ -89,14 +95,17 @@ const Category = () => {
         }
 
         try {
+            setUpdatingCategory(true);
             await axiosConfig.put(API_ENDPOINTS.UPDATE_CATEGORY(id), {name, type, icon});
             setOpenEditCategoryModal(false);
             setSelectedCategory(null);
             toast.success("Category updated successfully");
             fetchCategoryDetails();
-        }catch(error) {
+        } catch(error) {
             console.error('Error updating category:', error.response?.data?.message || error.message);
             toast.error(error.response?.data?.message || "Failed to update category.");
+        } finally {
+            setUpdatingCategory(false);
         }
     }
 
@@ -115,7 +124,13 @@ const Category = () => {
                 </div>
 
                 {/* Category list */}
-                <CategoryList categories={categoryData} onEditCategory={handleEditCategory} />
+                {loading ? (
+                    <div className="flex justify-center items-center h-64">
+                        <LoadingSpinner size="lg" />
+                    </div>
+                ) : (
+                    <CategoryList categories={categoryData} onEditCategory={handleEditCategory} />
+                )}
 
                 {/* Adding category modal*/}
                 <Modal
@@ -123,7 +138,10 @@ const Category = () => {
                     onClose={() => setOpenAddCategoryModal(false)}
                     title="Add Category"
                 >
-                    <AddCategoryForm onAddCategory={handleAddCategory}/>
+                    <AddCategoryForm 
+                        onAddCategory={handleAddCategory}
+                        isSubmitting={addingCategory}
+                    />
                 </Modal>
                 {/* Updating category modal*/}
                 <Modal
@@ -138,6 +156,7 @@ const Category = () => {
                         initialCategoryData={selectedCategory}
                         onAddCategory={handleUpdateCategory}
                         isEditing={true}
+                        isSubmitting={updatingCategory}
                     />
                 </Modal>
             </div>

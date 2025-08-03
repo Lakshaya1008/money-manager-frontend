@@ -1,6 +1,7 @@
 import Dashboard from "../components/Dashboard.jsx";
 import {useUser} from "../hooks/useUser.jsx";
-import {Search} from "lucide-react";
+import { Search, AlertCircle } from "lucide-react";
+import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import {useState} from "react";
 import axiosConfig from "../util/axiosConfig.jsx";
 import {API_ENDPOINTS} from "../util/apiEndpoints.js";
@@ -88,8 +89,16 @@ const Filter = () => {
                                 <label htmlFor="keyword" className="block text-sm font-medium mb-1">Search</label>
                                 <input value={keyword} id="keyword" type="text" placeholder="Search..." className="w-full border rounded px-3 py-2" onChange={e => setKeyword(e.target.value)} />
                             </div>
-                            <button onClick={handleSearch} className="ml-2 mb-1 p-2 bg-purple-800 hover:bg-purple-800 text-white rounded flex items-center justify-center cursor-pointer">
-                                <Search size={20} />
+                            <button 
+                                onClick={handleSearch} 
+                                disabled={loading}
+                                className="ml-2 mb-1 p-2 bg-purple-800 hover:bg-purple-800 text-white rounded flex items-center justify-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loading ? (
+                                    <LoadingSpinner size="sm" className="text-white" />
+                                ) : (
+                                    <Search size={20} />
+                                )}
                             </button>
                         </div>
                     </form>
@@ -98,13 +107,16 @@ const Filter = () => {
                     <div className="flex items-center justify-between mb-4">
                         <h5 className="text-lg font-semibold">Transactions</h5>
                     </div>
-                    {transactions.length === 0 && !loading? (
-                        <p className="text-gray-500">Select the filters and click apply to filter the transactions</p>
-                    ): ""}
                     {loading ? (
-                        <p className="text-gray-500">Loading Transactions</p>
-                    ): ("")}
-                    {transactions.map((transaction) => (
+                        <div className="flex items-center justify-center py-8">
+                            <LoadingSpinner size="lg" />
+                        </div>
+                    ) : transactions.length === 0 ? (
+                        <div className="flex items-center gap-2 text-gray-500 py-4">
+                            <AlertCircle size={18} />
+                            <p>Select the filters and click apply to filter the transactions</p>
+                        </div>
+                    ) : transactions.map((transaction) => (
                         <TransactionInfoCard
                             key={transaction.id}
                             title={transaction.name}
