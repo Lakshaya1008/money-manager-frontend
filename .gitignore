@@ -1,1 +1,2 @@
 -e "node_modules/\ndist/\n.env\n.env.*\n.vscode/\n.idea/\n" 
+".env"  
